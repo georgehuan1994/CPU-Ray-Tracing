@@ -19,7 +19,7 @@ public:
 
     virtual bool scatter(const Ray& r_in, const hit_record& rec, Color& attenuation, Ray& scattered) const override
     {
-        // 散播方向 (未归一化)，单位球体反射：中心点沿单位法线移动的单位球体
+        // 散播方向 (未归一化)，单位球体反射：与受击点相切的单位球体
         auto scatter_direction = rec.normal + random_unit_vector();
 
         // 散播方向 (未归一化)，单位半球反射
@@ -78,18 +78,12 @@ public:
         Vec3 direction;
         if (cannot_refract || reflectance(cos_theta, refraciton_ratio) > random_double())
         {
-
-        }
-        if (cannot_refract)
-        {
-            direction = reflect(unit_direction, rec.normal);
+			direction = reflect(unit_direction, rec.normal);
         }
         else 
         {
             direction = refract(unit_direction, rec.normal, refraciton_ratio);
         }
-
-        Vec3 refracted = refract(unit_direction, rec.normal, refraciton_ratio);
 
         scattered = Ray(rec.p, direction);
         return true;
