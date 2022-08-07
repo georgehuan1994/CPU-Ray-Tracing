@@ -1,8 +1,8 @@
 #ifndef MATERIAL_H
 #define MATERIAL_H
 
-#include "rtweekend.h"
-#include "../InOneWeekend/hittable.h"
+#include "../common/rtweekend.h"
+#include "hittable.h"
 
 struct hit_record;
 
@@ -19,13 +19,13 @@ public:
 
     virtual bool scatter(const Ray& r_in, const hit_record& rec, Color& attenuation, Ray& scattered) const override
     {
-        // É¢²¥·½Ïò (Î´¹éÒ»»¯)£¬µ¥Î»ÇòÌå·´Éä£ºÓëÊÜ»÷µãÏàÇÐµÄµ¥Î»ÇòÌå
+        // É¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ (Î´ï¿½ï¿½Ò»ï¿½ï¿½)ï¿½ï¿½ï¿½ï¿½Î»ï¿½ï¿½ï¿½å·´ï¿½ä£ºï¿½ï¿½ï¿½Ü»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÐµÄµï¿½Î»ï¿½ï¿½ï¿½ï¿½
         auto scatter_direction = rec.normal + random_unit_vector();
 
-        // É¢²¥·½Ïò (Î´¹éÒ»»¯)£¬µ¥Î»°ëÇò·´Éä
+        // É¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ (Î´ï¿½ï¿½Ò»ï¿½ï¿½)ï¿½ï¿½ï¿½ï¿½Î»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         // auto scatter_direction = rec.p + random_in_hemisphere(rec.normal);
 
-        // Èç¹ûÉ¢²¥·½Ïò (Î´¹éÒ»»¯) Èý¸ö·ÖÁ¿½Ó½ü 0£¬½«·¨Ïß·½Ïò×÷ÎªÉ¢²¥·½Ïò
+        // ï¿½ï¿½ï¿½É¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ (Î´ï¿½ï¿½Ò»ï¿½ï¿½) ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó½ï¿½ 0ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ß·ï¿½ï¿½ï¿½ï¿½ï¿½ÎªÉ¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         if (scatter_direction.near_zero())
         {
             scatter_direction = rec.normal;

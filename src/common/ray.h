@@ -13,10 +13,10 @@ public:
     Vec3 direction() const { return dir; }
 
     /// <summary>
-    /// 交点
+    /// 浜ょ偣
     /// </summary>
-    /// <param name="t">距离</param>
-    /// <returns>交点坐标</returns>
+    /// <param name="t">璺濈</param>
+    /// <returns>浜ょ偣鍧愭爣</returns>
     Point3 at(double t) const 
     {
         return orig + t * dir;

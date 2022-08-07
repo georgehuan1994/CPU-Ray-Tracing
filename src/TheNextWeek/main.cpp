@@ -1,8 +1,12 @@
-﻿#include "../math/vec3.h"
+//
+// Created by George on 2022/8/6.
+//
+
+#include "../math/vec3.h"
 #include "../common/ray.h"
 #include "../common/rtweekend.h"
 #include "../common/camera.h"
-#include "material.h"
+#include "src/TheNextWeek/material.h"
 
 #include "sphere.h"
 #include "hittable_list.h"
@@ -32,7 +36,7 @@ Color ray_color(const Ray& r, const hittable& world, int depth)
 
         // 单位半球反射
         // Point3 target = rec.p + random_in_hemisphere(rec.normal);
-        
+
         // 输出半衰漫反射
         // return 0.5 * ray_color(Ray(rec.p, target - rec.p), world, depth - 1);
 
@@ -50,38 +54,38 @@ Color ray_color(const Ray& r, const hittable& world, int depth)
     }
 
     // 未击中球体，即散播射线击中了天空，或第一次就击中了天空；方向越高 (y 分量越大)，颜色越蓝
-    Vec3 unit_direction = unit_vector(r.direction()); 
+    Vec3 unit_direction = unit_vector(r.direction());
     auto t = 0.5 * (unit_direction.y() + 1.0); // [0, 1]
     return (1.0 - t) * Color(1.0, 1.0, 1.0) + t * Color(0.5, 0.7, 1.0);
 }
 
 /// 随机场景
-hittable_list random_scene() 
+hittable_list random_scene()
 {
     hittable_list world;
 
     auto ground_material = make_shared<lambertian>(Color(0.8, 0.8, 0.0));
     world.add(make_shared<Sphere>(Point3(0, -1000, 0), 1000, ground_material));
 
-    for (int a = -11; a < 11; a++) 
+    for (int a = -11; a < 11; a++)
     {
         for (int b = -11; b < 11; b++)
         {
             auto choose_mat = random_double();
             Point3 center(a + 0.9 * random_double(), 0.2, b + 0.9 * random_double());
 
-            if ((center - Point3(4, 0.2, 0)).length() > 0.9) 
+            if ((center - Point3(4, 0.2, 0)).length() > 0.9)
             {
                 shared_ptr<material> sphere_material;
 
-                if (choose_mat < 0.8) 
+                if (choose_mat < 0.8)
                 {
                     // diffuse
                     auto albedo = Color::random() * Color::random();
                     sphere_material = make_shared<lambertian>(albedo);
                     world.add(make_shared<Sphere>(center, 0.2, sphere_material));
                 }
-                else if (choose_mat < 0.95) 
+                else if (choose_mat < 0.95)
                 {
                     // metal
                     auto albedo = Color::random(0.5, 1);
@@ -89,7 +93,7 @@ hittable_list random_scene()
                     sphere_material = make_shared<metal>(albedo, fuzz);
                     world.add(make_shared<Sphere>(center, 0.2, sphere_material));
                 }
-                else 
+                else
                 {
                     // glass
                     sphere_material = make_shared<dielectric>(1.5);
