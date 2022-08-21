@@ -143,6 +143,19 @@ inline Vec3 unit_vector(Vec3 v)
 	return v / v.length();
 }
 
+inline Vec3 random_in_unit_disk()
+{
+    while (true)
+    {
+        auto p = Vec3(
+                rand() / (RAND_MAX + 1.0),
+                rand() / (RAND_MAX + 1.0),
+                0);
+        if (p.length_squared() >= 1) continue;
+        return p;
+    }
+}
+
 inline Vec3 random_in_unit_sphere() 
 {
 	while (true) 

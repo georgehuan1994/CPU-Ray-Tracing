@@ -33,4 +33,4 @@ add_executable(TheNextWeek
         src/TheNextWeek/hittable_list.h
         src/TheNextWeek/sphere.h
         src/math/vec3.h
-        src/TheNextWeek/main.cpp)
+        src/TheNextWeek/main.cpp src/TheNextWeek/moving_sphere.h)
