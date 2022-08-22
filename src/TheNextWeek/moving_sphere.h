@@ -17,6 +17,8 @@ public:
 
     virtual bool hit(const Ray &r, double t_min, double t_max, hit_record &rec) const override;
 
+    virtual bool bounding_box(double time0, double _time1, aabb &output_box) const override;
+
     Point3 center(double time) const;
 
 public:
@@ -44,8 +46,7 @@ bool moving_sphere::hit(const Ray &r, double t_min, double t_max, hit_record &re
 
     // 找到距离最近的根，并判断是否在可接受的范围内：[0.001, infinity]
     auto root = (-half_b - sqrtd) / a;
-    if (root < t_min || t_max < root)
-    {
+    if (root < t_min || t_max < root) {
         root = (-half_b + sqrtd) / a;
         if (root < t_min || t_max < root)
             return false;
@@ -57,6 +58,18 @@ bool moving_sphere::hit(const Ray &r, double t_min, double t_max, hit_record &re
     rec.set_face_normal(r, outward_normal);
     rec.mat_ptr = mat_ptr;
 
+    return true;
+}
+
+bool moving_sphere::bounding_box(double _time0, double _time1, aabb &output_box) const {
+    aabb box0(
+            center(_time0) - Vec3(radius, radius, radius),
+            center(_time0) + Vec3(radius, radius,radius));
+    aabb box1(
+            center(_time1) - Vec3(radius, radius, radius),
+            center(_time1) + Vec3(radius, radius, radius));
+
+    output_box = surrounding_box(box0, box1);
     return true;
 }
 

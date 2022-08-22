@@ -1,16 +1,19 @@
 #ifndef HITTABLE_H
 #define HITTABLE_H
 
+#include "aabb.h"
 #include "../common/rtweekend.h"
 
 class material;
 
-struct hit_record
+struct hit_record   // hit info
 {
     Point3 p;
     Vec3 normal;
     shared_ptr<material> mat_ptr;
     double t;
+    double u;
+    double v;
     bool front_face;
 
     inline void set_face_normal(const Ray& r, const Vec3& outward_normal)
@@ -24,6 +27,7 @@ class hittable
 {
 public:
 	virtual bool hit(const Ray& r, double t_min, double t_max, hit_record& rec) const = 0;
+    virtual bool bounding_box(double time0, double time1, aabb& output_box) const = 0;
 };
 
 #endif // !HITTABLE_H
