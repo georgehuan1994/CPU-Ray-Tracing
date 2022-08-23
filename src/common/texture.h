@@ -6,6 +6,7 @@
 #define RAY_TRACING_TEXTURE_H
 
 #include "rtweekend.h"
+#include "perlin.h"
 
 class texture {
 public:
@@ -49,6 +50,18 @@ public:
     shared_ptr<texture> odd;
     shared_ptr<texture> even;
 
+};
+
+class noise_texture : public texture {
+public:
+    noise_texture() {}
+
+    virtual Color value(double u, double v, const Point3 &p) const override {
+        return Color(1, 1, 1) * noise.noise(p);
+    }
+
+private:
+    perlin noise;
 };
 
 #endif //RAY_TRACING_TEXTURE_H

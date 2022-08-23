@@ -35,4 +35,6 @@ add_executable(TheNextWeek
         src/math/vec3.h
         src/TheNextWeek/main.cpp src/TheNextWeek/moving_sphere.h
         src/common/aabb.h
-        src/TheNextWeek/bvh.h src/common/texture.h)
+        src/TheNextWeek/bvh.h
+        src/common/texture.h
+        src/common/perlin.h)
