@@ -37,4 +37,10 @@ add_executable(TheNextWeek
         src/common/aabb.h
         src/TheNextWeek/bvh.h
         src/common/texture.h
-        src/common/perlin.h)
+        src/common/perlin.h
+        src/common/external/stb_image.h
+        src/common/external/stb_image_write.h
+        src/common/rtw_stb_image.h
+        src/TheNextWeek/aarect.h
+        src/TheNextWeek/box.h
+        src/TheNextWeek/constant_medium.h)

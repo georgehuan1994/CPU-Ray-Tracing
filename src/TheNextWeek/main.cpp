@@ -12,12 +12,16 @@
 #include "hittable_list.h"
 #include "moving_sphere.h"
 #include "bvh.h"
+#include "texture.h"
+#include "aarect.h"
+#include "box.h"
+#include "constant_medium.h"
 
 #include <iostream>
 
 
 /// 发射射线，返回颜色
-Color ray_color(const Ray &r, const hittable &world, int depth) {
+Color ray_color(const Ray &r, const Color &background, const hittable &world, int depth) {
     hit_record rec;
 
     // 迭代深度，也可以用 RR 作为终止条件
@@ -25,36 +29,35 @@ Color ray_color(const Ray &r, const hittable &world, int depth) {
         return Color(0, 0, 0);
     }
 
-    // 击中球体
-    if (world.hit(r, 0.001, infinity, rec)) {
-        // 直接输出法线颜色
-        // return 0.5 * (rec.normal + Color(1, 1, 1));
-
-        // 单位球体反射：中心点沿单位法线移动的单位球体
-        // Point3 target = rec.p + rec.normal + random_unit_vector();
-
-        // 单位半球反射
-        // Point3 target = rec.p + random_in_hemisphere(rec.normal);
-
-        // 输出半衰漫反射
-        // return 0.5 * ray_color(Ray(rec.p, target - rec.p), world, depth - 1);
-
-        Ray scattered;      // 散播射线
-        Color attenuation;  // 能量衰减值 (材质反照率、漫射颜色)
-
-        // 使用受击材质的属性为它们赋值，然后继续散播
-        if (rec.mat_ptr->scatter(r, rec, attenuation, scattered)) {
-            // 递归，光线能量按材质内表面或外表面的衰减值衰减；表现为：随着弹射次数的增加，在最终颜色值中的叠加权重降低
-            return attenuation * ray_color(scattered, world, depth - 1);
-        }
-
-        return Color(0, 0, 0);
+    if (!world.hit(r, 0.001, infinity, rec)) {
+        return background;
     }
 
-    // 未击中球体，即散播射线击中了天空，或第一次就击中了天空；方向越高 (y 分量越大)，颜色越蓝
-    Vec3 unit_direction = unit_vector(r.direction());
-    auto t = 0.5 * (unit_direction.y() + 1.0); // [0, 1]
-    return (1.0 - t) * Color(1.0, 1.0, 1.0) + t * Color(0.5, 0.7, 1.0);
+    // 击中球体
+    // 直接输出法线颜色
+    // return 0.5 * (rec.normal + Color(1, 1, 1));
+
+    // 单位球体反射：中心点沿单位法线移动的单位球体
+    // Point3 target = rec.p + rec.normal + random_unit_vector();
+
+    // 单位半球反射
+    // Point3 target = rec.p + random_in_hemisphere(rec.normal);
+
+    // 输出半衰漫反射
+    // return 0.5 * ray_color(Ray(rec.p, target - rec.p), world, depth - 1);
+
+    Ray scattered;      // 散播射线
+    Color attenuation;  // 能量衰减值 (材质反照率、漫射颜色)
+    Color emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
+
+    // 击中自发光材质
+    if (!rec.mat_ptr->scatter(r, rec, attenuation, scattered)) {
+        return emitted;
+    }
+
+    // 使用受击材质的属性为它们赋值，然后继续散播
+    // 递归，光线能量按材质内表面或外表面的衰减值衰减；表现为：随着弹射次数的增加，在最终颜色值中的叠加权重降低
+    return emitted + attenuation * ray_color(scattered, background, world, depth - 1);
 }
 
 /// 随机场景
@@ -63,7 +66,7 @@ hittable_list random_scene() {
 
     auto ground_material = make_shared<lambertian>(Color(0.8, 0.8, 0.0));
 
-    // Plane
+//    // Plane
 //    world.add(make_shared<Sphere>(Point3(0, -1000, 0), 1000, ground_material));
     auto checker = make_shared<checker_texture>(Color(0.1, 0.1, 0.1), Color(0.9, 0.9, 0.9));
     world.add(make_shared<Sphere>(Point3(0, -1000, 0), 1000, make_shared<lambertian>(checker)));
@@ -106,7 +109,7 @@ hittable_list random_scene() {
     auto material3 = make_shared<metal>(Color(0.7, 0.6, 0.5), 0.0);
     world.add(make_shared<Sphere>(Point3(4, 1, 0), 1.0, material3));
 
-//    return hittable_list(make_shared<bvh_node>(world, 0.0, 1.0));
+    return hittable_list(make_shared<bvh_node>(world, 0.0, 1.0));
     return world;
 }
 
@@ -124,9 +127,208 @@ hittable_list two_spheres() {
 hittable_list two_perlin_sphere() {
     hittable_list objects;
 
-    auto pertext = make_shared<noise_texture>();
+    auto pertext = make_shared<noise_texture>(4);
     objects.add(make_shared<Sphere>(Point3(0, -1000, 0), 1000, make_shared<lambertian>(pertext)));
     objects.add(make_shared<Sphere>(Point3(0, 2, 0), 2, make_shared<lambertian>(pertext)));
+
+    return objects;
+}
+
+hittable_list earth() {
+    auto earth_texture = make_shared<image_texture>("Image/latlon-base-map.png");
+    auto earth_surface = make_shared<lambertian>(earth_texture);
+    auto globe = make_shared<Sphere>(Point3(0, 0, 0), 2, earth_surface);
+
+    return hittable_list(globe);
+}
+
+hittable_list simple_light() {
+    hittable_list objects;
+
+    auto pertext = make_shared<noise_texture>(4);
+    objects.add(make_shared<Sphere>(Point3(0, -1000, 0), 1000, make_shared<lambertian>(pertext)));
+    objects.add(make_shared<Sphere>(Point3(0, 2, 0), 2, make_shared<lambertian>(pertext)));
+
+    auto difflight = make_shared<diffuse_light>(Color(4, 4, 4));
+    objects.add(make_shared<Sphere>(Point3(0, 7, 0), 2, difflight));
+    objects.add(make_shared<xy_rect>(3, 5, 1, 3, -2, difflight));
+
+    return objects;
+}
+
+hittable_list cornell_box() {
+    hittable_list objects;
+
+    auto red = make_shared<lambertian>(Color(.65, .05, .05));
+    auto white = make_shared<lambertian>(Color(.73, .73, .73));
+    auto green = make_shared<lambertian>(Color(.12, .45, .15));
+    auto light = make_shared<diffuse_light>(Color(15, 15, 15));
+
+    objects.add(make_shared<yz_rect>(0, 555, 0, 555, 555, green));
+    objects.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
+    objects.add(make_shared<xz_rect>(213, 343, 227, 332, 554, light));
+    objects.add(make_shared<xz_rect>(0, 555, 0, 555, 0, white));
+    objects.add(make_shared<xz_rect>(0, 555, 0, 555, 555, white));
+    objects.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));
+
+//    objects.add(make_shared<box>(Point3(130, 0, 65), Point3(295, 165, 230), white));
+//    objects.add(make_shared<box>(Point3(265, 0, 295), Point3(430, 330, 460), white));
+
+    shared_ptr<hittable> box1 = make_shared<box>(Point3(0, 0, 0), Point3(165, 330, 165), white);
+    box1 = make_shared<rotate_y>(box1, 15);
+    box1 = make_shared<translate>(box1, Vec3(265, 0, 295));
+    objects.add(box1);
+
+    shared_ptr<hittable> box2 = make_shared<box>(Point3(0, 0, 0), Point3(165, 165, 165), white);
+    box2 = make_shared<rotate_y>(box2, -18);
+    box2 = make_shared<translate>(box2, Vec3(130, 0, 65));
+    objects.add(box2);
+
+    return objects;
+}
+
+hittable_list cornell_smoke() {
+    hittable_list objects;
+
+    auto red = make_shared<lambertian>(Color(.65, .05, .05));
+    auto white = make_shared<lambertian>(Color(.73, .73, .73));
+    auto green = make_shared<lambertian>(Color(.12, .45, .15));
+    auto light = make_shared<diffuse_light>(Color(7, 7, 7));
+
+    objects.add(make_shared<yz_rect>(0, 555, 0, 555, 555, green));
+    objects.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
+    objects.add(make_shared<xz_rect>(213, 343, 227, 332, 554, light));
+    objects.add(make_shared<xz_rect>(0, 555, 0, 555, 0, white));
+    objects.add(make_shared<xz_rect>(0, 555, 0, 555, 555, white));
+    objects.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));
+
+    shared_ptr<hittable> box1 = make_shared<box>(Point3(0, 0, 0), Point3(165, 330, 165), white);
+    box1 = make_shared<rotate_y>(box1, 15);
+    box1 = make_shared<translate>(box1, Vec3(265, 0, 295));
+
+    shared_ptr<hittable> box2 = make_shared<box>(Point3(0, 0, 0), Point3(165, 165, 165), white);
+    box2 = make_shared<rotate_y>(box2, -18);
+    box2 = make_shared<translate>(box2, Vec3(130, 0, 65));
+
+    objects.add(make_shared<constant_medium>(box1, 0.01, Color(0, 0, 0)));
+    objects.add(make_shared<constant_medium>(box2, 0.01, Color(1, 1, 1)));
+
+    return objects;
+}
+
+hittable_list cornell_box_cover1() {
+    hittable_list objects;
+
+    auto red = make_shared<lambertian>(Color(.65, .05, .05));
+    auto white = make_shared<lambertian>(Color(.73, .73, .73));
+    auto green = make_shared<lambertian>(Color(.12, .45, .15));
+    auto light = make_shared<diffuse_light>(Color(15, 15, 15));
+
+    objects.add(make_shared<yz_rect>(0, 555, 0, 555, 555, green));
+    objects.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
+    objects.add(make_shared<xz_rect>(213, 343, 227, 332, 554, light));
+    objects.add(make_shared<xz_rect>(0, 555, 0, 555, 0, white));
+    objects.add(make_shared<xz_rect>(0, 555, 0, 555, 555, white));
+    objects.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));
+
+    shared_ptr<hittable> box1 = make_shared<box>(Point3(0, 0, 0), Point3(165, 330, 165), white);
+    box1 = make_shared<rotate_y>(box1, 15);
+    box1 = make_shared<translate>(box1, Vec3(265, 0, 295));
+    objects.add(box1);
+
+    shared_ptr<hittable> box2 = make_shared<box>(Point3(0, 0, 0), Point3(165, 165, 165), white);
+    box2 = make_shared<rotate_y>(box2, -18);
+    box2 = make_shared<translate>(box2, Vec3(130, 0, 65));
+    objects.add(box2);
+
+    return objects;
+}
+
+hittable_list cornell_box_cover2() {
+    hittable_list objects;
+
+    auto red = make_shared<lambertian>(Color(.65, .05, .05));
+    auto white = make_shared<lambertian>(Color(.73, .73, .73));
+    auto green = make_shared<lambertian>(Color(.12, .45, .15));
+    auto light = make_shared<diffuse_light>(Color(15, 15, 15));
+
+    objects.add(make_shared<yz_rect>(0, 555, 0, 555, 555, green));
+    objects.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
+    objects.add(make_shared<xz_rect>(213, 343, 227, 332, 554, light));
+    objects.add(make_shared<xz_rect>(0, 555, 0, 555, 0, white));
+    objects.add(make_shared<xz_rect>(0, 555, 0, 555, 555, white));
+    objects.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));
+
+    shared_ptr<hittable> box1 = make_shared<box>(Point3(0, 0, 0), Point3(165, 330, 165), white);
+    box1 = make_shared<rotate_y>(box1, 15);
+    box1 = make_shared<translate>(box1, Vec3(265, 0, 295));
+    objects.add(box1);
+
+    shared_ptr<hittable> box2 = make_shared<box>(Point3(0, 0, 0), Point3(165, 165, 165), white);
+    box2 = make_shared<rotate_y>(box2, -18);
+    box2 = make_shared<translate>(box2, Vec3(130, 0, 65));
+    objects.add(box2);
+
+    return objects;
+}
+
+hittable_list final_scene() {
+    hittable_list boxes1;
+    auto ground = make_shared<lambertian>(Color(0.48, 0.83, 0.53));
+
+    const int boxes_per_side = 20;
+    for (int i = 0; i < boxes_per_side; ++i) {
+        for (int j = 0; j < boxes_per_side; ++j) {
+            auto w = 100.0;
+            auto x0 = -1000.0 + i * w;
+            auto z0 = -1000.0 + j * w;
+            auto y0 = 0.0;
+            auto x1 = x0 + w;
+            auto y1 = random_double(1, 101);
+            auto z1 = z0 + w;
+
+            boxes1.add(make_shared<box>(Point3(x0, y0, z0), Point3(x1, y1, z1), ground));
+        }
+    }
+
+    hittable_list objects;
+    objects.add(make_shared<bvh_node>(boxes1, 0, 1));
+
+    auto light = make_shared<diffuse_light>(Color(7, 7, 7));
+    objects.add(make_shared<xz_rect>(123, 423, 147, 412, 554, light));
+
+    auto center1 = Point3(400, 400, 200);
+    auto center2 = center1 + Vec3(30, 0, 0);
+    auto moving_sphere_material = make_shared<lambertian>(Color(0.7, 0.3, 0.1));
+    objects.add(make_shared<moving_sphere>(center1, center2, 0, 1, 50, moving_sphere_material));
+
+    objects.add(make_shared<Sphere>(Point3(260, 150, 45), 50, make_shared<dielectric>(1.5)));
+    objects.add(make_shared<Sphere>(Point3(0, 150, 145), 50, make_shared<metal>(Color(0.8, 0.8, 0.9), 1.0)));
+
+    auto boundary = make_shared<Sphere>(Point3(360, 150, 145), 70, make_shared<dielectric>(1.5));
+    objects.add(boundary);
+    objects.add(make_shared<constant_medium>(boundary, 0.2, Color(0.2, 0.4, 0.9)));
+    boundary = make_shared<Sphere>(Point3(0, 0, 0), 5000, make_shared<dielectric>(1.5));
+    objects.add(make_shared<constant_medium>(boundary, .0001, Color(1, 1, 1)));
+
+    auto emat = make_shared<lambertian>(make_shared<image_texture>("Image/latlon-base-map.png"));
+    objects.add(make_shared<Sphere>(Point3(400, 200, 400), 100, emat));
+    auto pertext = make_shared<noise_texture>(0.1);
+    objects.add(make_shared<Sphere>(Point3(220, 280, 300), 80, make_shared<lambertian>(pertext)));
+
+    hittable_list boxes2;
+    auto white = make_shared<lambertian>(Color(.73, .73, .73));
+    int ns = 1000;
+    for (int j = 0; j < ns; j++) {
+        boxes2.add(make_shared<Sphere>(Point3::random(0, 165), 10, white));
+    }
+
+    objects.add(make_shared<translate>(
+                        make_shared<rotate_y>(
+                                make_shared<bvh_node>(boxes2, 0.0, 1.0), 15),
+                        Vec3(-100, 270, 395)
+                )
+    );
 
     return objects;
 }
@@ -134,10 +336,10 @@ hittable_list two_perlin_sphere() {
 int main() {
     // Image
 
-    const auto aspect_ratio = 2.5;
-    const int image_width = 860;
-    const int image_height = static_cast<int>(image_width / aspect_ratio);
-    const int samples_per_pixel = 10; // 样本数，从每个像素发出的射线数 500
+    auto aspect_ratio = 2.5;
+    int image_width = 860;
+    int image_height = static_cast<int>(image_width / aspect_ratio);
+    int samples_per_pixel = 500; // 样本数，从每个像素发出的射线数 500
     const int max_depth = 50; // 50
 
     // World & Camera
@@ -150,10 +352,12 @@ int main() {
     auto dist_to_focus = 10.0;
     auto aperture = 0.0;
     Vec3 vup(0, 1, 0);
+    Color background(0, 0, 0);
 
     switch (0) {
         case 1:
             world = random_scene();
+            background = Color(0.70, 0.80, 1.00);
             lookfrom = Point3(13, 2, 3);
             lookat = Point3(0, 0, 0);
             vfov = 20.0;
@@ -162,17 +366,71 @@ int main() {
 
         case 2:
             world = two_spheres();
+            background = Color(0.70, 0.80, 1.00);
             lookfrom = Point3(13, 2, 3);
             lookat = Point3(0, 0, 0);
             vfov = 20.0;
             break;
 
-        default:
         case 3:
             world = two_perlin_sphere();
+            background = Color(0.70, 0.80, 1.00);
             lookfrom = Point3(13, 2, 3);
             lookat = Point3(0, 0, 0);
             vfov = 20.0;
+            break;
+
+        case 4:
+            world = earth();
+            background = Color(0.70, 0.80, 1.00);
+            lookfrom = Point3(13, 2, 3);
+            lookat = Point3(0, 0, 0);
+            vfov = 20.0;
+            break;
+
+        case 5:
+            world = simple_light();
+            background = Color(0.0, 0.0, 0.0);
+            lookfrom = Point3(26, 3, 6);
+            lookat = Point3(0, 2, 0);
+            vfov = 20.0;
+            break;
+
+        default:
+        case 6:
+            world = cornell_box();
+            aspect_ratio = 1.0;
+            image_width = 600;
+            image_height = 600;
+            samples_per_pixel = 10000;
+            background = Color(0, 0, 0);
+            lookfrom = Point3(278, 278, -800);
+            lookat = Point3(278, 278, 0);
+            vfov = 40.0;
+            break;
+
+        case 7:
+            world = cornell_smoke();
+            aspect_ratio = 1.0;
+            image_width = 600;
+            image_height = 600;
+            background = Color(0, 0, 0);
+            lookfrom = Point3(278, 278, -800);
+            lookat = Point3(278, 278, 0);
+            vfov = 40.0;
+            break;
+
+
+        case 8:
+            world = final_scene();
+            samples_per_pixel = 100;
+            aspect_ratio = 1.0;
+            image_width = 600;
+            image_height = 600;
+            lookfrom = Point3(278, 278, -800);
+            lookat = Point3(278, 278, 0);
+            vfov = 40.0;
+
             break;
     }
 
@@ -180,8 +438,8 @@ int main() {
 
     // Render
 
-    FILE *f = fopen("image.ppm",
-                    "w");  // 没有用 CMake 和 string，直接用的 MSBuild，改为文件 IO，添加 C/C++ 预处理器定义 _CRT_SECURE_NO_WARNINGS
+    // 没有用 CMake 和 string，直接用的 MSBuild，改为文件 IO，添加 C/C++ 预处理器定义 _CRT_SECURE_NO_WARNINGS
+    FILE *f = fopen("image.ppm", "w");
     fprintf(f, "P3\n%d %d\n%d\n", image_width, image_height, 255);
 
     // 从左上角开始，从左到右逐行写入每个像素的颜色值
@@ -197,7 +455,7 @@ int main() {
                 auto v = (j + random_double()) / (double(image_height) - 1);
 
                 Ray ray = cam.get_ray(u, v);
-                pixel_color += ray_color(ray, world, max_depth);
+                pixel_color += ray_color(ray, background, world, max_depth);
             }
 
             double r = pixel_color.x();

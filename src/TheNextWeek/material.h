@@ -9,6 +9,10 @@ struct hit_record;
 
 class material {
 public:
+    virtual Color emitted(double u, double v, const Point3 &p) const {
+        return Color(0, 0, 0);
+    }
+
     virtual bool scatter(const Ray &r_in, const hit_record &rec, Color &attenuation, Ray &scattered) const = 0;
 };
 
@@ -90,6 +94,42 @@ private:
         r0 = r0 * r0;
         return r0 + (1 - r0) * pow((1 - cosine), 5);
     }
+};
+
+class diffuse_light : public material {
+public:
+    diffuse_light(shared_ptr<texture> a) : emit(a) {}
+
+    diffuse_light(Color c) : emit(make_shared<solid_color>(c)) {}
+
+    bool scatter(
+            const Ray &r_in, const hit_record &rec, Color &attenuation, Ray &scattered
+    ) const override {
+        return false;
+    }
+
+    Color emitted(double u, double v, const Point3 &p) const override {
+        return emit->value(u, v, p);
+    }
+
+public:
+    shared_ptr<texture> emit;
+};
+
+class isotropic : public material {
+public:
+    isotropic(Color c) : albedo(make_shared<solid_color>(c)) {}
+
+    isotropic(shared_ptr<texture> a) : albedo(a) {}
+
+    virtual bool scatter(const Ray &r_in, const hit_record &rec, Color &attenuation, Ray &scattered) const override {
+        scattered = Ray(rec.p, random_in_unit_sphere(), r_in.time());
+        attenuation = albedo->value(rec.u, rec.v, rec.p);
+        return true;
+    }
+
+public:
+    shared_ptr<texture> albedo;
 };
 
 #endif
