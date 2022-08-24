@@ -216,6 +216,7 @@ hittable_list cornell_smoke() {
     return objects;
 }
 
+// 金属立方体 + 玻璃球
 hittable_list cornell_box_cover1() {
     hittable_list objects;
 
@@ -231,19 +232,21 @@ hittable_list cornell_box_cover1() {
     objects.add(make_shared<xz_rect>(0, 555, 0, 555, 555, white));
     objects.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));
 
-    shared_ptr<hittable> box1 = make_shared<box>(Point3(0, 0, 0), Point3(165, 330, 165), white);
+    // 金属立方体
+    shared_ptr<material> aluminum = make_shared<metal>(Color(0.8, 0.85, 0.88), 0.0);
+    shared_ptr<hittable> box1 = make_shared<box>(Point3(0, 0, 0), Point3(165, 330, 165), aluminum);
     box1 = make_shared<rotate_y>(box1, 15);
     box1 = make_shared<translate>(box1, Vec3(265, 0, 295));
     objects.add(box1);
 
-    shared_ptr<hittable> box2 = make_shared<box>(Point3(0, 0, 0), Point3(165, 165, 165), white);
-    box2 = make_shared<rotate_y>(box2, -18);
-    box2 = make_shared<translate>(box2, Vec3(130, 0, 65));
-    objects.add(box2);
+    // 玻璃球
+    auto glass = make_shared<dielectric>(1.5);
+    objects.add(make_shared<Sphere>(Point3(190,90,190), 90 , glass));
 
     return objects;
 }
 
+// 白雾玻璃立方体 + 大理石球
 hittable_list cornell_box_cover2() {
     hittable_list objects;
 
@@ -259,23 +262,67 @@ hittable_list cornell_box_cover2() {
     objects.add(make_shared<xz_rect>(0, 555, 0, 555, 555, white));
     objects.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));
 
-    shared_ptr<hittable> box1 = make_shared<box>(Point3(0, 0, 0), Point3(165, 330, 165), white);
+    // 白雾玻璃立方体
+    shared_ptr<hittable> box1 = make_shared<box>(Point3(0, 0, 0), Point3(165, 330, 165), make_shared<dielectric>(1.5));
     box1 = make_shared<rotate_y>(box1, 15);
     box1 = make_shared<translate>(box1, Vec3(265, 0, 295));
     objects.add(box1);
+    objects.add(make_shared<constant_medium>(box1, 0.2, Color(0.9, 0.9, 0.9)));
 
-    shared_ptr<hittable> box2 = make_shared<box>(Point3(0, 0, 0), Point3(165, 165, 165), white);
-    box2 = make_shared<rotate_y>(box2, -18);
-    box2 = make_shared<translate>(box2, Vec3(130, 0, 65));
-    objects.add(box2);
+    // 大理石球
+    auto pertext = make_shared<noise_texture>(4);
+    objects.add(make_shared<Sphere>(Point3(190,90,190), 90 , make_shared<lambertian>(pertext)));
+
+    return objects;
+}
+
+// 聚集立方体 + 雾玻璃球
+hittable_list cornell_box_cover3() {
+    hittable_list objects;
+
+    auto red = make_shared<lambertian>(Color(.65, .05, .05));
+    auto white = make_shared<lambertian>(Color(.73, .73, .73));
+    auto green = make_shared<lambertian>(Color(.12, .45, .15));
+    auto light = make_shared<diffuse_light>(Color(15, 15, 15));
+
+    objects.add(make_shared<yz_rect>(0, 555, 0, 555, 555, green));
+    objects.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
+    objects.add(make_shared<xz_rect>(213, 343, 227, 332, 554, light));
+    objects.add(make_shared<xz_rect>(0, 555, 0, 555, 0, white));
+    objects.add(make_shared<xz_rect>(0, 555, 0, 555, 555, white));
+    objects.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));
+
+    // 聚集方块
+    hittable_list boxes;
+    int ns = 4000;
+    for (int j = 0; j < ns; j++) {
+        boxes.add(make_shared<Sphere>(Point3(
+                random_double(0.0, 165.0),
+                random_double(0.0, 330.0),
+                random_double(0.0, 165.0)), 10, white));
+    }
+    objects.add(make_shared<translate>(
+                        make_shared<rotate_y>(
+                                make_shared<bvh_node>(boxes, 0.0, 1.0), 15),
+                        Vec3(265, 0, 295)
+                )
+    );
+
+    // 雾玻璃球
+    auto boundary = make_shared<Sphere>(Point3(190,90,190), 90, make_shared<dielectric>(1.5));
+    objects.add(boundary);
+    objects.add(make_shared<constant_medium>(boundary, 0.2, Color(0.2, 0.4, 0.9)));
 
     return objects;
 }
 
 hittable_list final_scene() {
+
+    hittable_list objects;
+
+    // 地面
     hittable_list boxes1;
     auto ground = make_shared<lambertian>(Color(0.48, 0.83, 0.53));
-
     const int boxes_per_side = 20;
     for (int i = 0; i < boxes_per_side; ++i) {
         for (int j = 0; j < boxes_per_side; ++j) {
@@ -290,39 +337,48 @@ hittable_list final_scene() {
             boxes1.add(make_shared<box>(Point3(x0, y0, z0), Point3(x1, y1, z1), ground));
         }
     }
-
-    hittable_list objects;
     objects.add(make_shared<bvh_node>(boxes1, 0, 1));
 
+    // 顶灯
     auto light = make_shared<diffuse_light>(Color(7, 7, 7));
     objects.add(make_shared<xz_rect>(123, 423, 147, 412, 554, light));
 
+    // 运动球
     auto center1 = Point3(400, 400, 200);
     auto center2 = center1 + Vec3(30, 0, 0);
     auto moving_sphere_material = make_shared<lambertian>(Color(0.7, 0.3, 0.1));
     objects.add(make_shared<moving_sphere>(center1, center2, 0, 1, 50, moving_sphere_material));
 
+    // 玻璃球
     objects.add(make_shared<Sphere>(Point3(260, 150, 45), 50, make_shared<dielectric>(1.5)));
+
+    // 金属球(右)
     objects.add(make_shared<Sphere>(Point3(0, 150, 145), 50, make_shared<metal>(Color(0.8, 0.8, 0.9), 1.0)));
 
+    // 蓝色玻璃球
     auto boundary = make_shared<Sphere>(Point3(360, 150, 145), 70, make_shared<dielectric>(1.5));
     objects.add(boundary);
     objects.add(make_shared<constant_medium>(boundary, 0.2, Color(0.2, 0.4, 0.9)));
+
+    // 全局雾
     boundary = make_shared<Sphere>(Point3(0, 0, 0), 5000, make_shared<dielectric>(1.5));
     objects.add(make_shared<constant_medium>(boundary, .0001, Color(1, 1, 1)));
 
+    // 贴图纹理球
     auto emat = make_shared<lambertian>(make_shared<image_texture>("Image/latlon-base-map.png"));
     objects.add(make_shared<Sphere>(Point3(400, 200, 400), 100, emat));
+
+    // 噪声纹理球
     auto pertext = make_shared<noise_texture>(0.1);
     objects.add(make_shared<Sphere>(Point3(220, 280, 300), 80, make_shared<lambertian>(pertext)));
 
+    // 聚集方块
     hittable_list boxes2;
     auto white = make_shared<lambertian>(Color(.73, .73, .73));
     int ns = 1000;
     for (int j = 0; j < ns; j++) {
         boxes2.add(make_shared<Sphere>(Point3::random(0, 165), 10, white));
     }
-
     objects.add(make_shared<translate>(
                         make_shared<rotate_y>(
                                 make_shared<bvh_node>(boxes2, 0.0, 1.0), 15),
@@ -331,6 +387,78 @@ hittable_list final_scene() {
     );
 
     return objects;
+}
+
+hittable_list final_scene2() {
+
+    hittable_list world;
+
+    auto ground_material = make_shared<lambertian>(Color(0.8, 0.8, 0.0));
+
+    // Plane
+    world.add(make_shared<Sphere>(Point3(0, -1000, 0), 1000, ground_material));
+
+    // 小球
+    hittable_list boxes1;
+    for (int a = -11; a < 11; a++) {
+        for (int b = -11; b < 11; b++) {
+            auto choose_mat = random_double();
+            Point3 center(a + 0.9 * random_double(), 0.2, b + 0.9 * random_double());
+
+            if ((center - Point3(4, 0.2, 0)).length() > 0.9) {
+                shared_ptr<material> sphere_material;
+
+                if (choose_mat < 0.8) {
+                    // diffuse
+                    auto albedo = Color::random() * Color::random();
+                    sphere_material = make_shared<lambertian>(albedo);
+                    auto center2 = center + Vec3(0, random_double(0, 0.5), 0);
+                    if (choose_mat < 0.75) {
+                        boxes1.add(make_shared<Sphere>(center, 0.2, sphere_material));
+                    } else{
+                        boxes1.add(make_shared<moving_sphere>(center, center2, 0.0, 1.0, 0.2, sphere_material));
+                    }
+                } else if (choose_mat < 0.95) {
+                    // metal
+                    auto albedo = Color::random(0.5, 1);
+                    auto fuzz = random_double(0, 0.5);
+                    sphere_material = make_shared<metal>(albedo, fuzz);
+                    boxes1.add(make_shared<Sphere>(center, 0.2, sphere_material));
+                } else {
+                    // glass
+                    sphere_material = make_shared<dielectric>(1.5);
+                    boxes1.add(make_shared<Sphere>(center, 0.2, sphere_material));
+                }
+            }
+        }
+    }
+    world.add(make_shared<bvh_node>(boxes1, 0, 1));
+
+
+    auto material1 = make_shared<dielectric>(1.5);
+    world.add(make_shared<Sphere>(Point3(0, 1, 0), 1.0, material1));
+
+//    auto material2 = make_shared<lambertian>(make_shared<image_texture>("Image/marsmap.jpg"));
+//    world.add(make_shared<Sphere>(Point3(-4, 1, 0), 1.0, material2));
+
+    auto pertext = make_shared<noise_texture>(0.1);
+    world.add(make_shared<Sphere>(Point3(-4, 1, 0), 1.0, make_shared<lambertian>(pertext)));
+
+    auto material3 = make_shared<metal>(Color(0.7, 0.6, 0.5), 0.0);
+    world.add(make_shared<Sphere>(Point3(4, 1, 0), 1.0, material3));
+
+    // 灯
+    auto light = make_shared<diffuse_light>(Color(7, 7, 7));
+    world.add(make_shared<Sphere>(Point3(0, 4, 0), 1.0, light));
+
+//    auto light = make_shared<diffuse_light>(Color(7, 7, 7));
+//    world.add(make_shared<xz_rect>(-5, 5, -0.5, 0.5, 4, light));
+
+    // 全局雾
+    auto boundary = make_shared<Sphere>(Point3(0, 0, 0), 50, make_shared<dielectric>(1.5));
+    world.add(make_shared<constant_medium>(boundary, .0001, Color(1, 1, 1)));
+
+    return world;
 }
 
 int main() {
@@ -398,11 +526,15 @@ int main() {
 
         default:
         case 6:
-            world = cornell_box();
+//            world = cornell_box();
+//            world = cornell_box_cover1();
+//            world = cornell_box_cover2();
+            world = cornell_box_cover3();
+
             aspect_ratio = 1.0;
             image_width = 600;
             image_height = 600;
-            samples_per_pixel = 10000;
+            samples_per_pixel = 100;
             background = Color(0, 0, 0);
             lookfrom = Point3(278, 278, -800);
             lookat = Point3(278, 278, 0);
@@ -422,14 +554,12 @@ int main() {
 
 
         case 8:
-            world = final_scene();
-            samples_per_pixel = 100;
-            aspect_ratio = 1.0;
-            image_width = 600;
-            image_height = 600;
-            lookfrom = Point3(278, 278, -800);
-            lookat = Point3(278, 278, 0);
-            vfov = 40.0;
+            world = final_scene2();
+            samples_per_pixel = 10000;
+            lookfrom = Point3(13, 2, 3);
+            lookat = Point3(0, 0, 0);
+            vfov = 20.0;
+            aperture = 0.1;
 
             break;
     }
