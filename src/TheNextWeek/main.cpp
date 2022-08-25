@@ -60,6 +60,8 @@ Color ray_color(const Ray &r, const Color &background, const hittable &world, in
     return emitted + attenuation * ray_color(scattered, background, world, depth - 1);
 }
 
+const char *file_name = "image.ppm";
+
 /// 随机场景
 hittable_list random_scene() {
     hittable_list world;
@@ -218,6 +220,8 @@ hittable_list cornell_smoke() {
 
 // 金属立方体 + 玻璃球
 hittable_list cornell_box_cover1() {
+
+    file_name = "cornell_box_cover1.ppm";
     hittable_list objects;
 
     auto red = make_shared<lambertian>(Color(.65, .05, .05));
@@ -233,7 +237,7 @@ hittable_list cornell_box_cover1() {
     objects.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));
 
     // 金属立方体
-    shared_ptr<material> aluminum = make_shared<metal>(Color(0.8, 0.85, 0.88), 0.0);
+    shared_ptr<material> aluminum = make_shared<metal>(Color(0.8, 0.85, 0.88), 0.3);
     shared_ptr<hittable> box1 = make_shared<box>(Point3(0, 0, 0), Point3(165, 330, 165), aluminum);
     box1 = make_shared<rotate_y>(box1, 15);
     box1 = make_shared<translate>(box1, Vec3(265, 0, 295));
@@ -248,6 +252,8 @@ hittable_list cornell_box_cover1() {
 
 // 白雾玻璃立方体 + 大理石球
 hittable_list cornell_box_cover2() {
+
+    file_name = "cornell_box_cover2.ppm";
     hittable_list objects;
 
     auto red = make_shared<lambertian>(Color(.65, .05, .05));
@@ -267,10 +273,10 @@ hittable_list cornell_box_cover2() {
     box1 = make_shared<rotate_y>(box1, 15);
     box1 = make_shared<translate>(box1, Vec3(265, 0, 295));
     objects.add(box1);
-    objects.add(make_shared<constant_medium>(box1, 0.2, Color(0.9, 0.9, 0.9)));
+    objects.add(make_shared<constant_medium>(box1, 0.2, Color(.73, .73, .73)));
 
     // 大理石球
-    auto pertext = make_shared<noise_texture>(4);
+    auto pertext = make_shared<noise_texture>(1);
     objects.add(make_shared<Sphere>(Point3(190,90,190), 90 , make_shared<lambertian>(pertext)));
 
     return objects;
@@ -278,6 +284,8 @@ hittable_list cornell_box_cover2() {
 
 // 聚集立方体 + 雾玻璃球
 hittable_list cornell_box_cover3() {
+
+    file_name = "cornell_box_cover3.ppm";
     hittable_list objects;
 
     auto red = make_shared<lambertian>(Color(.65, .05, .05));
@@ -532,9 +540,9 @@ int main() {
             world = cornell_box_cover3();
 
             aspect_ratio = 1.0;
-            image_width = 600;
-            image_height = 600;
-            samples_per_pixel = 100;
+            image_width = 512;
+            image_height = 512;
+            samples_per_pixel = 8192;
             background = Color(0, 0, 0);
             lookfrom = Point3(278, 278, -800);
             lookat = Point3(278, 278, 0);
@@ -569,7 +577,7 @@ int main() {
     // Render
 
     // 没有用 CMake 和 string，直接用的 MSBuild，改为文件 IO，添加 C/C++ 预处理器定义 _CRT_SECURE_NO_WARNINGS
-    FILE *f = fopen("image.ppm", "w");
+    FILE *f = fopen(file_name, "w");
     fprintf(f, "P3\n%d %d\n%d\n", image_width, image_height, 255);
 
     // 从左上角开始，从左到右逐行写入每个像素的颜色值

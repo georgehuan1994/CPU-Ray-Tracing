@@ -64,7 +64,7 @@ bool moving_sphere::hit(const Ray &r, double t_min, double t_max, hit_record &re
 bool moving_sphere::bounding_box(double _time0, double _time1, aabb &output_box) const {
     aabb box0(
             center(_time0) - Vec3(radius, radius, radius),
-            center(_time0) + Vec3(radius, radius,radius));
+            center(_time0) + Vec3(radius, radius, radius));
     aabb box1(
             center(_time1) - Vec3(radius, radius, radius),
             center(_time1) + Vec3(radius, radius, radius));

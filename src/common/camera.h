@@ -4,8 +4,7 @@
 
 #include "rtweekend.h"
 
-class camera 
-{
+class camera {
 public:
     camera(
             Point3 lookfrom,
@@ -16,8 +15,7 @@ public:
             double aperture,
             double focus_dist,
             double _time0 = 0,
-            double _time1 = 0)
-    {
+            double _time1 = 0) {
         auto theta = degrees_to_radians(vfov);
         auto h = tan(theta / 2);
         auto viewport_height = 2.0 * h;
@@ -38,8 +36,7 @@ public:
         time1 = _time1;
     }
 
-    Ray get_ray(double x, double y) const 
-    {
+    Ray get_ray(double x, double y) const {
         Vec3 rd = lens_radius * random_in_unit_disk();
         Vec3 offset = u * rd.x() + v * rd.y();
 

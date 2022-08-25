@@ -3,14 +3,16 @@
 
 #include "../math/vec3.h"
 
-class Ray 
-{
+class Ray {
 public:
     Ray() = default;
-    Ray(const Point3& origin, const Vec3& direction, double time = 0.0): orig(origin), dir(direction), tm(time) {}
+
+    Ray(const Point3 &origin, const Vec3 &direction, double time = 0.0) : orig(origin), dir(direction), tm(time) {}
 
     Point3 origin() const { return orig; }
+
     Vec3 direction() const { return dir; }
+
     double time() const { return tm; }
 
     /// <summary>
@@ -18,8 +20,7 @@ public:
     /// </summary>
     /// <param name="t">距离</param>
     /// <returns>交点坐标</returns>
-    Point3 at(double t) const 
-    {
+    Point3 at(double t) const {
         return orig + t * dir;
     }
 
