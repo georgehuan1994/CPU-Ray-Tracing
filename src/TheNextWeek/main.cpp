@@ -17,6 +17,7 @@
 #include "box.h"
 #include "constant_medium.h"
 
+#include <time.h>
 #include <iostream>
 
 
@@ -245,7 +246,7 @@ hittable_list cornell_box_cover1() {
 
     // 玻璃球
     auto glass = make_shared<dielectric>(1.5);
-    objects.add(make_shared<Sphere>(Point3(190,90,190), 90 , glass));
+    objects.add(make_shared<Sphere>(Point3(190, 90, 190), 90, glass));
 
     return objects;
 }
@@ -276,8 +277,8 @@ hittable_list cornell_box_cover2() {
     objects.add(make_shared<constant_medium>(box1, 0.2, Color(.73, .73, .73)));
 
     // 大理石球
-    auto pertext = make_shared<noise_texture>(1);
-    objects.add(make_shared<Sphere>(Point3(190,90,190), 90 , make_shared<lambertian>(pertext)));
+    auto pertext = make_shared<noise_texture>(3); //3
+    objects.add(make_shared<Sphere>(Point3(190, 90, 190), 90, make_shared<lambertian>(pertext)));
 
     return objects;
 }
@@ -317,7 +318,7 @@ hittable_list cornell_box_cover3() {
     );
 
     // 雾玻璃球
-    auto boundary = make_shared<Sphere>(Point3(190,90,190), 90, make_shared<dielectric>(1.5));
+    auto boundary = make_shared<Sphere>(Point3(190, 90, 190), 90, make_shared<dielectric>(1.5));
     objects.add(boundary);
     objects.add(make_shared<constant_medium>(boundary, 0.2, Color(0.2, 0.4, 0.9)));
 
@@ -423,7 +424,7 @@ hittable_list final_scene2() {
                     auto center2 = center + Vec3(0, random_double(0, 0.5), 0);
                     if (choose_mat < 0.75) {
                         boxes1.add(make_shared<Sphere>(center, 0.2, sphere_material));
-                    } else{
+                    } else {
                         boxes1.add(make_shared<moving_sphere>(center, center2, 0.0, 1.0, 0.2, sphere_material));
                     }
                 } else if (choose_mat < 0.95) {
@@ -470,6 +471,10 @@ hittable_list final_scene2() {
 }
 
 int main() {
+
+    clock_t start, end;
+    start = clock();
+
     // Image
 
     auto aspect_ratio = 2.5;
@@ -536,13 +541,13 @@ int main() {
         case 6:
 //            world = cornell_box();
 //            world = cornell_box_cover1();
-//            world = cornell_box_cover2();
-            world = cornell_box_cover3();
+            world = cornell_box_cover2();
+//            world = cornell_box_cover3();
 
             aspect_ratio = 1.0;
             image_width = 512;
             image_height = 512;
-            samples_per_pixel = 8192;
+            samples_per_pixel = 8192; // 8192
             background = Color(0, 0, 0);
             lookfrom = Point3(278, 278, -800);
             lookat = Point3(278, 278, 0);
@@ -616,4 +621,7 @@ int main() {
     }
 
     std::cerr << "\nDone.\n";
+
+    end = clock();   //结束时间
+    std::cerr << "\ntime = " << double(end - start) / CLOCKS_PER_SEC << "s\n";
 }

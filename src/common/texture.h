@@ -64,6 +64,7 @@ public:
     virtual Color value(double u, double v, const Point3 &p) const override {
 //        return Color(1, 1, 1) * 0.5 * (1 + noise.noise(scale * p));
 //        return Color(1, 1, 1) * noise.turb(scale * p);
+        return Color(1, 1, 1) * 0.5 * (1 + sin(scale * p.z() + 10 * noise.turb(scale * p)));
         return Color(1, 1, 1) * 0.5 * (1 + sin(scale * p.z() + 10 * noise.turb(p)));
     }
 
