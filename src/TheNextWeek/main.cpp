@@ -274,10 +274,10 @@ hittable_list cornell_box_cover2() {
     box1 = make_shared<rotate_y>(box1, 15);
     box1 = make_shared<translate>(box1, Vec3(265, 0, 295));
     objects.add(box1);
-    objects.add(make_shared<constant_medium>(box1, 0.2, Color(.73, .73, .73)));
+    objects.add(make_shared<constant_medium>(box1, 0.1, Color(.73, .73, .73)));
 
     // 大理石球
-    auto pertext = make_shared<noise_texture>(3); //3
+    auto pertext = make_shared<noise_texture>(0.05);
     objects.add(make_shared<Sphere>(Point3(190, 90, 190), 90, make_shared<lambertian>(pertext)));
 
     return objects;

@@ -25,20 +25,20 @@ public:
     // 传入射线、起点距离、最大距离，判断是射线否与 AABB 相交
     bool hit(const Ray &r, double t_min, double t_max) const {
 
-//        检查射线在三个维度上的重叠情况
-//        for (int i = 0; i < 3; i++) {
-//            auto t0 = fmin(
-//                    (minimum[i] - r.origin()[i]) / r.direction()[i],
-//                    (maximum[i] - r.origin()[i]) / r.direction()[i]);
-//            auto t1 = fmax(
-//                    (minimum[i] - r.origin()[i]) / r.direction()[i],
-//                    (maximum[i] - r.origin()[i]) / r.direction()[i]);
-//            t_min = fmax(t0, t_min);
-//            t_max = fmin(t1, t_max);
-//            if (t_max <= t_min)
-//                return false;
-//        }
-//        return true;
+        // 检查射线在三个维度上的重叠情况
+        for (int i = 0; i < 3; i++) {
+            auto t0 = fmin(
+                    (minimum[i] - r.origin()[i]) / r.direction()[i],
+                    (maximum[i] - r.origin()[i]) / r.direction()[i]);
+            auto t1 = fmax(
+                    (minimum[i] - r.origin()[i]) / r.direction()[i],
+                    (maximum[i] - r.origin()[i]) / r.direction()[i]);
+            t_min = fmax(t0, t_min);
+            t_max = fmin(t1, t_max);
+            if (t_max <= t_min)
+                return false;
+        }
+        return true;
 
         // 重叠检查优化版本
         for (int a = 0; a < 3; a++) {

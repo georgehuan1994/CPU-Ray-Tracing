@@ -63,7 +63,7 @@ bvh_node::bvh_node(const std::vector<shared_ptr<hittable>> &src_objects,
     // 在 x, y, z 中随机选一个轴
     int axis = random_int(0, 2);
 
-    // comparison 方法
+    // comparison 比较函数
     auto comparator =
             (axis == 0) ? box_x_compare
                         : (axis == 1) ? box_y_compare
@@ -95,6 +95,7 @@ bvh_node::bvh_node(const std::vector<shared_ptr<hittable>> &src_objects,
 
     aabb box_left, box_right;
 
+    // 检查一个物体是否有包围盒，防止传入一些无法处理的物体，如无限大的平面
     if (!left->bounding_box(time0, time1, box_left) || !right->bounding_box(time0, time1, box_right))
         std::cerr << "No bounding box in bvh_node constructor.\n";
 

@@ -10,11 +10,13 @@
 class perlin {
 public:
     perlin() {
+        // 随机单位向量 256
         ranvec = new Vec3[point_count];
         for (int i = 0; i < point_count; ++i) {
             ranvec[i] = unit_vector(Vec3::random(-1, 1));
         }
 
+        // 三个分量上的乱序索引
         perm_x = perlin_generate_perm();
         perm_y = perlin_generate_perm();
         perm_z = perlin_generate_perm();
@@ -29,6 +31,7 @@ public:
 
     double noise(const Point3 &p) const {
 
+//        //
 //        auto i = static_cast<int>(4 * p.x()) & 255;
 //        auto j = static_cast<int>(4 * p.y()) & 255;
 //        auto k = static_cast<int>(4 * p.z()) & 255;
@@ -90,6 +93,7 @@ private:
     int *perm_y;
     int *perm_z;
 
+    // 生成随机排列的索引
     static int *perlin_generate_perm() {
         auto p = new int[point_count];
 
@@ -102,6 +106,7 @@ private:
         return p;
     }
 
+    // 打乱索引顺序
     static void permute(int *p, int n) {
         for (int i = n - 1; i > 0; i--) {
             int target = random_int(0, i);
@@ -111,7 +116,7 @@ private:
         }
     }
 
-    // 三线性插值
+    // 插值
     static double perlin_interp(Vec3 c[2][2][2], double u, double v, double w) {
         auto uu = u * u * (3 - 2 * u);
         auto vv = v * v * (3 - 2 * v);
@@ -131,5 +136,6 @@ private:
         return accum;
     }
 };
+
 
 #endif //RAY_TRACING_PERLIN_H
