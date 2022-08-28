@@ -32,6 +32,7 @@ bool hittable_list::hit(const Ray& r, double t_min, double t_max, hit_record& re
 
 	for (const auto& object : objects)
 	{
+        // 使用 t_max 最小的命中结果作为 hit_record，相当于深度测试
 		if (object->hit(r, t_min, closest_so_far, temp_rec))
 		{
 			hit_anything = true;

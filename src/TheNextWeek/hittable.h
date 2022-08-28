@@ -92,6 +92,7 @@ rotate_y::rotate_y(shared_ptr<hittable> p, double angle) : ptr(p) {
     Point3 min(infinity, infinity, infinity);
     Point3 max(-infinity, -infinity, -infinity);
 
+    // 旋转 AABB 的 8 个顶点，重新构造 AABB
     for (int i = 0; i < 2; i++) {
         for (int j = 0; j < 2; j++) {
             for (int k = 0; k < 2; k++) {
@@ -116,6 +117,8 @@ rotate_y::rotate_y(shared_ptr<hittable> p, double angle) : ptr(p) {
 }
 
 bool rotate_y::hit(const Ray &r, double t_min, double t_max, hit_record &rec) const {
+
+    // 先将射线起点、方向的 xz 分量反向旋转
     auto origin = r.origin();
     auto direction = r.direction();
 
@@ -127,9 +130,11 @@ bool rotate_y::hit(const Ray &r, double t_min, double t_max, hit_record &rec) co
 
     Ray rotated_r(origin, direction, r.time());
 
+    // 用反向旋转后的射线与未旋转的物体求交
     if (!ptr->hit(rotated_r, t_min, t_max, rec))
         return false;
 
+    // 再按条件把交点坐标和法向旋转回来
     auto p = rec.p;
     auto normal = rec.normal;
 

@@ -38,9 +38,11 @@ bool constant_medium::hit(const Ray &r, double t_min, double t_max, hit_record &
 
     hit_record rec1, rec2;
 
+    // 射线1 是否命中边界的包围盒 (获取前点)
     if (!boundary->hit(r, -infinity, infinity, rec1))
         return false;
 
+    // 将 射线1 与边界包围盒的命中点作为 射线2 的起点 (获取后点)
     if (!boundary->hit(r, rec1.t + 0.0001, infinity, rec2))
         return false;
 
@@ -55,13 +57,17 @@ bool constant_medium::hit(const Ray &r, double t_min, double t_max, hit_record &
     if (rec1.t < 0)
         rec1.t = 0;
 
+    // 获取光线在 volume 内的传播距离
     const auto ray_length = r.direction().length();
     const auto distance_inside_boundary = (rec2.t - rec1.t) * ray_length;
+
+    // -密度倒数 * log(0~1) 随机
     const auto hit_distance = neg_inv_density * log(random_double());
 
     if (hit_distance > distance_inside_boundary)
         return false;
 
+    // 设置 hit_record 距离和交点
     rec.t = rec1.t + hit_distance / ray_length;
     rec.p = r.at(rec.t);
 
@@ -71,8 +77,8 @@ bool constant_medium::hit(const Ray &r, double t_min, double t_max, hit_record &
 //                  << "rec.p = " << rec.p << '\n';
 //    }
 
-    rec.normal = Vec3(1, 0, 0);   // arbitrary
-    rec.front_face = true;                  // also arbitrary
+    rec.normal = Vec3(1, 0, 0);     // 任意值，不参与计算
+    rec.front_face = true;                      // 任意值，不参与计算
     rec.mat_ptr = phase_function;
 
     return true;

@@ -49,7 +49,7 @@ Color ray_color(const Ray &r, const Color &background, const hittable &world, in
 
     Ray scattered;      // 散播射线
     Color attenuation;  // 能量衰减值 (材质反照率、漫射颜色)
-    Color emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
+    Color emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);  // 自发光颜色
 
     // 击中自发光材质
     if (!rec.mat_ptr->scatter(r, rec, attenuation, scattered)) {
@@ -200,7 +200,7 @@ hittable_list cornell_smoke() {
 
     objects.add(make_shared<yz_rect>(0, 555, 0, 555, 555, green));
     objects.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
-    objects.add(make_shared<xz_rect>(213, 343, 227, 332, 554, light));
+    objects.add(make_shared<xz_rect>(113, 443, 127, 432, 554, light));
     objects.add(make_shared<xz_rect>(0, 555, 0, 555, 0, white));
     objects.add(make_shared<xz_rect>(0, 555, 0, 555, 555, white));
     objects.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));
@@ -213,8 +213,8 @@ hittable_list cornell_smoke() {
     box2 = make_shared<rotate_y>(box2, -18);
     box2 = make_shared<translate>(box2, Vec3(130, 0, 65));
 
-    objects.add(make_shared<constant_medium>(box1, 0.01, Color(0, 0, 0)));
-    objects.add(make_shared<constant_medium>(box2, 0.01, Color(1, 1, 1)));
+    objects.add(make_shared<constant_medium>(box1, 0.05, Color(0, 0, 0)));
+    objects.add(make_shared<constant_medium>(box2, 0.05, Color(1, 1, 1)));
 
     return objects;
 }
@@ -537,28 +537,30 @@ int main() {
             vfov = 20.0;
             break;
 
-        default:
+
         case 6:
-//            world = cornell_box();
+            world = cornell_box();
 //            world = cornell_box_cover1();
-            world = cornell_box_cover2();
+//            world = cornell_box_cover2();
 //            world = cornell_box_cover3();
 
             aspect_ratio = 1.0;
             image_width = 512;
             image_height = 512;
-            samples_per_pixel = 8192; // 8192
+            samples_per_pixel = 2048; // 8192
             background = Color(0, 0, 0);
             lookfrom = Point3(278, 278, -800);
             lookat = Point3(278, 278, 0);
             vfov = 40.0;
             break;
 
+        default:
         case 7:
             world = cornell_smoke();
             aspect_ratio = 1.0;
-            image_width = 600;
-            image_height = 600;
+            image_width = 512;
+            image_height = 512;
+            samples_per_pixel = 1024;
             background = Color(0, 0, 0);
             lookfrom = Point3(278, 278, -800);
             lookat = Point3(278, 278, 0);
