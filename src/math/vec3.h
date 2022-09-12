@@ -199,4 +199,30 @@ inline Vec3 refract(const Vec3& uv, const Vec3& n, double etai_over_etat)
 	return r_out_perp + r_out_parallel;
 }
 
+inline Vec3 random_cosine_direction()
+{
+    auto r1 = rand() / (RAND_MAX + 1.0);
+    auto r2 = rand() / (RAND_MAX + 1.0);
+    auto z = sqrt(1 - r2);
+
+    auto phi = 2 * 3.1415926535897932385 * r1;
+    auto x = cos(phi) * sqrt(r2);
+    auto y = sin(phi) * sqrt(r2);
+
+    return Vec3(x, y, z);
+}
+
+inline Vec3 random_to_sphere(double radius, double distance_squared)
+{
+    auto r1 = rand() / (RAND_MAX + 1.0);
+    auto r2 = rand() / (RAND_MAX + 1.0);
+    auto z = 1 + r2 * (sqrt(1 - radius * radius / distance_squared) - 1);
+
+    auto phi = 2 * 3.1415926535897932385 * r1;
+    auto x = cos(phi) * sqrt(1 - z * z);
+    auto y = sin(phi) * sqrt(1 - z * z);
+
+    return Vec3(x, y, z);
+}
+
 #endif
